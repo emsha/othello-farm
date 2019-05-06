@@ -1,0 +1,42 @@
+Saturday, April 13, 2019
+
+I would like to make an othello player. She will be a neural network of some kind. She will be born of fire, brought up in a world of competition, survival of the fittest. From many generations of similar nets, she will be the one who rises above the rest. 
+
+Todo:
+
+- set up othello gameplay
+- initialize neural net
+- create structure for training generations
+- how do we make a new generation from an old generation? consider mutations
+
+for today (apr 13), I will set up othello gameplay.
+
+
+
+tues apr 30 2019:
+I just made it so I can play n games from god between two players, and store all the winning moves paired up with the state from which the move was played. (state_in, move_out), stored in net tensor form (3 channel 100 elt padded images with channels being my pieces, their pieces, legal moves,,,,,,,64 elt list of all zeroes and a 1 where the move was made, corresponding with the coord of the move)
+
+new stuff:
+
+State.output_tensor_to_coords(t)	-> 			2 tuple
+State.coords_to_output_tensor(p)	-> 			tensor
+State.state_to_padded_input_tensor(state)	->	tensor
+game.play()
+
+next stuff:
+
+get net to take in stuff, put out stuff, make it all line up
+then test on training. make a pair, teach it to learn one move 
+
+------
+sunday may 5, 2019
+
+i can train it in batches now. playing with generating moves and training populations.
+
+next steps: 
+- refactor so that everything is a tensor, all of the game (cuda!)
+- mutate, crossover, evolve population
+	- decide: change hyperparameters too, or just weights? read
+- save and load nets to and from file
+- set up large populations and train and test. 
+- fine tune
