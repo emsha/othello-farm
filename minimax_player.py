@@ -1,5 +1,5 @@
 import random
-import dhconnelly_othello as dhc
+# import dhconnelly_othello as dhc
 from stateB import State
 from player import Player
 

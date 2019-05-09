@@ -1,3 +1,4 @@
+=======================================================
 Saturday, April 13, 2019
 
 I would like to make an othello player. She will be a neural network of some kind. She will be born of fire, brought up in a world of competition, survival of the fittest. From many generations of similar nets, she will be the one who rises above the rest. 
@@ -12,7 +13,7 @@ Todo:
 for today (apr 13), I will set up othello gameplay.
 
 
-
+=======================================================
 tues apr 30 2019:
 I just made it so I can play n games from god between two players, and store all the winning moves paired up with the state from which the move was played. (state_in, move_out), stored in net tensor form (3 channel 100 elt padded images with channels being my pieces, their pieces, legal moves,,,,,,,64 elt list of all zeroes and a 1 where the move was made, corresponding with the coord of the move)
 
@@ -28,7 +29,7 @@ next stuff:
 get net to take in stuff, put out stuff, make it all line up
 then test on training. make a pair, teach it to learn one move 
 
-------
+=======================================================
 sunday may 5, 2019
 
 i can train it in batches now. playing with generating moves and training populations.
@@ -40,3 +41,125 @@ next steps:
 - save and load nets to and from file
 - set up large populations and train and test. 
 - fine tune
+
+
+=======================================================
+monday may 6 2019
+
+the things i want to do today:
+- save/load net DONE
+- understand optimizer and criterion
+	- do i need to make new ones everytime i train? what information is stored?
+	DONE:? decided to store it with the net, in case i end up having different ones for different nets
+- make git repo DONE
+- read up on genetic evolution of nets, hyperparams, weights, strategies, good and bad practices?
+
+cuda won't work because macs are dumb. :(
+
+=======================================================
+Tuesday May 7
+
+I'm thinking about the repopulate step in this world. Is there a way to make a somewhat trained new net from an old net, where the new net has different hyperparameters? like a different shape? the amt of training per generation has to be enough such that a net with new hyperparameters can 'catch up' to ones that have preserved mostly the weights and shapes from the past successful ones, otherwise there won't be much opportunity for hyperparameter exploration.
+
+Finally fixed torch issue, I had uninstalled and reinstalled torch so I could try and get CUDA...turns out that's hard, so I reinstalled it with pip like i did previously, but now after reinstalling, there was an import error. I fixed it by uninstalling both torch and torchvision, and reinstalling the previous version 1.0.0 instead of 1.0.1. That fixed the issue. Then I reinstalled torchvision, and my god.py works again! Strange issue, couldn't make much sense of the posted issues, though it seems other users have had this issue too. 
+
+http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.28.5457&rep=rep1&type=pdf
+
+NEAT = NeuroEvolution of Augmenting Topologies (topology = structure of net)
+
+this paper argues: "if done right, evolving structure along with connection weights can significantly enhance the performance of NE[neuro evolution]" (p2)
+
+questions:
+- is there a way to crossover different topologies in an effective way?
+- how can we 'ensure' that an innovation in a population doesn't die out? like if the innovation needs a few generations to 'mature'
+- minimize topologies throughout evolution without a fitness fn that measures complexity?
+
+- crossover?? to mate or not to mate? the binary scale lol. seems that crossover isn't necessary, and can get complicated when considering the offspring of two nets with different topologies. feeling like i will omit crossover from my program, at least to start
+
+so next question: how do we encode the cnn so we can then mutate and make new buddies to repopulate the farm?
+
+another question: an innovation in topology can lead to a decrease in fitness at first, but after a few generations, the new shape could prove to be more effective. how to protect this innovation?
+	- one idea: GNARL system, adds 'nonfunctional' structure, not sure what this means, maybe is it that  when it's first added, it won't affect the performance, and only once it learns, itll change the behavior? (Start with zero'd weights?)
+		- problem with this is, it may never integrate
+- NEAT's solution: SPECIATION
+	- uses historical info about genes to group into species
+	- explicit fitness sharing forces similar genome'd buddies to share fitness payoff
+	- this way, the similar buddies can band together and be more robust than if they were alone. LIVE TOGETHER OR DIE ALONE #lost
+
+- cool idea: incorporate net size into fitness score to reward simpler configurations
+	- but this can be randomly decided by whoever is playing god, and this feels unnatural, could lead to suboptimal performance based on the decisions of the Creator
+
+- if we start out minimally, however, this will help keep our population from getting unecessarily huge architectures, and larger ones should emerge naturally and gradually from evolution
+
+SO.......
+NEAT combines all of these ideas.
+
+
+
+so lots of info.... lots of optimizations. maybe for the first iteration of this program, i'll just mutate weights. 
+
+--
+also new thing SNN (spiking neural network) i'm intrigued.
+
+--
+so anyway, POINT MUTATIONS:
+i need a representation of the net where I can iterate through weights and randomly change some of those using a function
+
+what could the fn be?
+m = mutation rate (chance that a weight is changed)
+
+def mutate(w):
+	m = random.randint(100) #says if this weight will be mutated
+	r=0
+	if m==0:
+		r = random.normalvariate(0, 1)/100
+	return r+w
+
+
+also another refactor: put the minimax in tensors...already is nuts
+
+next things: ConvNet.copy(net, mutate=False)
+also make mutation in tensors, adding tensors rather than iterating, should be much faster. how to make tensor of a size with random floats or even ints within range, then element wise addition bro
+
+---------------------
+=======================================================
+Wed May 8, 2019
+
+Today I did a few things. I added pointwise mutation using tensors and shapes. It works like this:
+
+in ConvNet:
+
+def clone(self, mutations=False)
+@staticmethod
+    def generate_mutations(net_layer, bound, rate_denom)
+
+clone returns a copy of a net potentially with point mutations
+generate_mutations makes a tensor the same shape as net_layer, with zeros everywhere excpt for where the values of random mutations occur.
+this outputed tensor should be added element wise to net.layer.weight.data by using tensorA.add_(tensorB). This is the new mutated weights.
+
+in god.py:
+
+added:
+	eval_pop_random -> returns score, results of tests against random players
+	repopulate -> edits pop arg in place, preserves top_n nets based on results, and replaces bottom of population with mutated versions of the top one
+	gen_pop -> generates population, returns list of nets
+
+	progressbar!
+
+also cleaned up code and printing.
+
+todo next: hyperparams? make mutation robust to changing shapes, play with learning rate, mutation rate, mutation range, basically get this to be faster than it is pls
+
+another thing i'm thinking about:
+
+i was considering as a next baby step in the mutation process, keeping populations of nets that start from the same place, and train with different learning rates and epoch values. adn then choosing the best after the training, copying it exactly, then training the next gen with those same combos of parameters as the one before ex:
+train all same start weights -> [lr=.001, lr=.002, lr=.01], choose best, copy best one to all spots, then train again with those ^ weights. 
+
+anywayyyyyy: 
+
+was thinking about efficiency/best use of resources. when is evolution the best use of time and computation? like could i be spending this time training one larger net a lot more and get it better than anything that the evolution would make? i guess that's the point of the evolution, is for it to be worth it, and to explore more than anything non-evolutionary could do. 
+
+mine's not worth it right now... lol
+
+also mutations to things like batch size, epochs, learning rate, things like that. shouldn't be too hard
+=======================================================
