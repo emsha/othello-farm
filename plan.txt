@@ -163,3 +163,44 @@ mine's not worth it right now... lol
 
 also mutations to things like batch size, epochs, learning rate, things like that. shouldn't be too hard
 =======================================================
+
+Thurs May 9, 2019
+
+I'm thinking about the way that I've approached this problem so far. I want validation. I think I may train one net on a few hyperparameters and see how it responds. Just to try to get one up to 90% winrate against a random mover. 
+
+After that, I'll make it so batch size, epochs, learning rate, loss fn. 
+
+Then, I'll start adding more conv filters, initialized to 1 when they're added.
+
+here's an idea:
+
+the architecture now is :
+
+input -> conv(64 3x3 filters w/ padding) -> fully connected -> fully connected->output
+
+I'll add a second conv layer that starts off with one layer?
+
+ok, added a second layer, it works better i think. havent done extensive testing yet. 
+
+buttt
+
+late night changes: made progress bar move in smaller increments. made it and its value a global variable TRY AND STOP ME u wont. on the surface, this change may seem superficial (lol), however; with large amounts of games, data, and buddies in bigger populations and longer trains, a progress bar that changes at least once a minute is really nice to have. 
+
+Also print all values at start of train to potentially save output and know these values ok nice.
+
+ALSO changed mutation rate and range to be less frequent and smaller.
+=======================================================
+=======================================================
+=======================================================
+=======================================================
+=======================================================
+=======================================================
+=======================================================
+=======================================================
+=======================================================
+=======================================================
+=======================================================
+=======================================================
+=======================================================
+=======================================================
+=======================================================

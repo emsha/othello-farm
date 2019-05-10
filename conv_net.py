@@ -22,7 +22,8 @@ class ConvNet(nn.Module):
         super(ConvNet, self).__init__()
         #
         self.conv1 = nn.Conv2d(in_channels, 64, kernel_size=3, stride=1, padding=1)
-        self.fc1 = nn.Linear(4096, 1000)
+        self.conv2 = nn.Conv2d(64, 64, kernel_size=5, stride=1, padding=1)
+        self.fc1 = nn.Linear(64*36, 1000)
         self.fc2 = nn.Linear(1000, 64)
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = optim.SGD(self.parameters(), lr=learning_rate, momentum=0.2)
@@ -30,6 +31,7 @@ class ConvNet(nn.Module):
         
     def forward(self, x):
         out = F.relu(self.conv1(x))
+        out = F.relu(self.conv2(out))
         out = F.relu(out.reshape(out.size(0), -1))
         out = self.fc1(out)
         out = self.fc2(out)
@@ -59,13 +61,13 @@ class ConvNet(nn.Module):
         clone.load_state_dict(self.state_dict())
         if mutations:
             #conv1
-            clone.conv1.weight.data.add_(ConvNet.generate_mutations(self.conv1, .001, 100))
+            clone.conv1.weight.data.add_(ConvNet.generate_mutations(self.conv1, .0005, 500))
             
             # fc1
-            clone.fc1.weight.data.add_(ConvNet.generate_mutations(self.fc1, .001, 100))
+            clone.fc1.weight.data.add_(ConvNet.generate_mutations(self.fc1, .0005, 500))
 
             # fc2
-            clone.fc2.weight.data.add_(ConvNet.generate_mutations(self.fc2, .001, 100))
+            clone.fc2.weight.data.add_(ConvNet.generate_mutations(self.fc2, .0005, 500))
         return clone
 
     @staticmethod
