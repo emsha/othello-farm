@@ -190,16 +190,34 @@ Also print all values at start of train to potentially save output and know thes
 
 ALSO changed mutation rate and range to be less frequent and smaller.
 =======================================================
+Sunday May 12, 2019
+
+I want to test the evolution part with data that's faster to verify. Generating games takes forever. I think the mutation and hyperparams is the important part of this project. So I'm going to start a sub project to set the buddies classifying images. This should be faster, and a good way to test if some mutation and evolution ideas can work. Plus, image labeling is a simpler problem than game playing (I think). 
+
+First hyperparameter idea: adding convolutional filters initialized to all 1's. 
+steps:
+- add layers to a list, so I could theoretically add layers, and be looping through them when forward propogating
+- hook up numbers so I could add a conv filter
+today: find some photos pls
+gonna use
+cifar-10 dataset
+
+from http://www.cs.toronto.edu/~kriz/cifar.html
+citation: Learning Multiple Layers of Features from Tiny Images, Alex Krizhevsky, 2009.
+
+may 12 nighttime, 23:56, just set up cifar10 training. used the quick tutorial on pytorch and it's training now. Getting it ready to be mutated yo.
+
+gn moon
 =======================================================
 =======================================================
-=======================================================
-=======================================================
-=======================================================
-=======================================================
-=======================================================
-=======================================================
-=======================================================
-=======================================================
+================______=================================
+===============/      \==========================
+==============/        \================================
+=============/   @  @   \===============================
+============|     <      |===============================
+=============\          /================================
+==============\ \___/  /================================
+===============\______/=================================
 =======================================================
 =======================================================
 =======================================================

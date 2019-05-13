@@ -213,18 +213,22 @@ def repopulate(pop, results, top_n):
 
 
 def main():
-    pop = gen_pop(5)
+    pop = gen_pop(3)
     GENERATIONS = 10
     N_TEST_GAMES = 50
-    N_TRAIN_GAMES = 70
+    N_TRAIN_GAMES = 75
     EPOCHS = 20
     LEARNING_RATE = .001
     TOP_N = 3
-    SAVE = True
+    SAVE = False
     FOLDER_PATH = "/Users/maxshashoua/Documents/Developer/othellofarm/population0/"
     
     print("*******AND GOD CREATED THE AI BUDDIES WITH THE FOLLOWING PARAMETERS*****")
     print("POP_SIZE: {}\nGENERATIONS: {}\nN_TEST_GAMES: {}\nN_TRAIN_GAMES: {}\nEPOCHS: {}\nLEARNING_RATE: {}\nTOP_N: {}\nSAVE: {}\nFOLDER_PATH: {}".format(len(pop), GENERATIONS, N_TEST_GAMES, N_TRAIN_GAMES, EPOCHS, LEARNING_RATE, TOP_N, SAVE, FOLDER_PATH))
+    print("    Evaluating population against random mover...")
+    score, results = eval_pop_random(pop, N_TEST_GAMES, showbar=True)
+    print("\n        Score: {}\n    Results:{}\n".format(score, results))
+        
     for g in range(GENERATIONS):
         print("\n\nGEN {}".format(g))
         
@@ -243,7 +247,7 @@ def main():
         print("    Repopulating with top {} nets".format(TOP_N))
         repopulate(pop, results, TOP_N)
     print(":)")
-    if save: save_pop(pop, folder_path)
+    if SAVE: save_pop(pop, folder_path)
     
 
 

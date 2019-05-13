@@ -4,4 +4,4 @@
 *.pyc
 *.pop
 *.pt
-
+data/*

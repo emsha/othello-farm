@@ -23,8 +23,8 @@ class ConvNet(nn.Module):
         #
         self.conv1 = nn.Conv2d(in_channels, 64, kernel_size=3, stride=1, padding=1)
         self.conv2 = nn.Conv2d(64, 64, kernel_size=5, stride=1, padding=1)
-        self.fc1 = nn.Linear(64*36, 1000)
-        self.fc2 = nn.Linear(1000, 64)
+        self.fc1 = nn.Linear(57600, 1000)#64*36, 1000)
+        self.fc2 = nn.Linear(1000, num_classes)
         self.criterion = nn.CrossEntropyLoss()
         self.optimizer = optim.SGD(self.parameters(), lr=learning_rate, momentum=0.2)
 
@@ -61,13 +61,13 @@ class ConvNet(nn.Module):
         clone.load_state_dict(self.state_dict())
         if mutations:
             #conv1
-            clone.conv1.weight.data.add_(ConvNet.generate_mutations(self.conv1, .0005, 500))
+            clone.conv1.weight.data.add_(ConvNet.generate_mutations(self.conv1, .0005, 150))
             
             # fc1
-            clone.fc1.weight.data.add_(ConvNet.generate_mutations(self.fc1, .0005, 500))
+            clone.fc1.weight.data.add_(ConvNet.generate_mutations(self.fc1, .0005, 150))
 
             # fc2
-            clone.fc2.weight.data.add_(ConvNet.generate_mutations(self.fc2, .0005, 500))
+            clone.fc2.weight.data.add_(ConvNet.generate_mutations(self.fc2, .0005, 150))
         return clone
 
     @staticmethod
