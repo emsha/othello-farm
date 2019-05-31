@@ -209,6 +209,49 @@ may 12 nighttime, 23:56, just set up cifar10 training. used the quick tutorial o
 
 gn moon
 =======================================================
+Monday May 20, 2019
+
+Next step: add conv filter addition. this means, if the mutation should occur, we add an extra filter in a random conv layer. initialize to all 1's. To do this: need to make the hyperparameters in the layers match up, need to figure out how to presreve weights from old net/add a filter of all ones. 
+=======================================================
+Thurs May 23, 2019
+
+How to encode a net?
+
+
+right now, the net is simple:
+input -> conv layer(s) -> fully connected layer(s) -> output
+so, our encoding will be two lists, the first encoding info for the conv layers, and the second for the fc layers
+conv layer list structure: [{inputs, outputs, kernel size, padding}, 
+
+scratch this^^
+
+ok, i found this:
+
+https://discuss.pytorch.org/t/dynamically-expandable-networks-resizing-weights-during-training/19218
+
+
+so todo now:
+
+start with very simple architecture, make init take parameters, i think this will be useful, or at least make a version that does so you understand the parameters of the shapes and the internal structure so that when you go in and fucks with it it will be correct. also read the above link, and maybe paper associated with it. thank you and goodnight.
+........
+okay so i read up on some stuff here it is ok nice. nn.sequential vs nn.module vs nn.modulelist vs nn.parameterlist vs all the other stuff. i think there's a way that the init of my net can use a list, so i dont have to do encoding myself. also using exec() is horrible and not working. :( i think i can use one of those. to simplify things, i won't change the fc layer. I'll have the final convolutional layer feed into the fc layer, and have the fc layer never change. or wait no. just have the boundries never change. for example: conv1, conv2(changable) ... conv_last(outputs never change), fc1 (inputs constant), fc... fc final (outputs to poutputs. ok)
+
+that way, i only have one spot that's different. but this shouldn't be an issue if i can figure out how to use the sequential and/or module ./module list or whatever thing i end up useing porperly.
+=======================================================
+May 27 2910
+** may 27 2019
+
+ok good start^ lol. I'm going to try to make a custom layer class that will build off of the Conv2d class. I'm going to add a clone function that clones with possible mutation of adding a filter initialized to all 1's. 
+
+ok maybe not. still reading and absorbing info and thinking. not ready to implement anything just yet. 
+
+https://medium.com/@stathis/design-by-evolution-393e41863f98
+ I have a feeling this^ shit is good shit ya feel
+
+=======================================================
+May 30, 2019
+
+I finished implementing the custom model class from the medium article, and adapted it to my model with the conv layers then the fc layer. I finally figured out how to compute the input to the first fc layer. yayayayayayayay. good shit good shit good shit boi.
 =======================================================
 ================______=================================
 ===============/      \==========================

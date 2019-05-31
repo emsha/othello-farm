@@ -1,3 +1,5 @@
+# conv_net_live.py
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -17,71 +19,28 @@ batch_size = 100
 num_epochs = 10
 num_classes = 64
 in_channels = 3
-class ConvNet(nn.Module):
-    def __init__(self, conv_encodings, fc_encodings):
-        super(ConvNet, self).__init__()
-
-        self.conv_encodings = conv_encodings
-        self.fc_encodings = fc_encodings
-        # conv layers
-        for i, encoding in enumerate(conv_encodings):
-            exec(self.str_convx(encoding, i))
-        # fc layers
-        for i, encoding in enumerate(fc_encodings):
-            exec(self.str_fcx(encoding, i))
-        
-        self.criterion = nn.CrossEntropyLoss()
-        self.optimizer = optim.SGD(self.parameters(), lr=learning_rate, momentum=0.2)
-        
-
+class ConvNetLive(nn.Module):
+    def __init__(self):
+        super(ConvNetLive, self).__init__()
 
 
         # old init:
-        # self.conv0 = nn.Conv2d(in_channels, 64, kernel_size=3, stride=1, padding=1)
+        self.conv0 = nn.Conv2d(in_channels, 64, kernel_size=3, stride=1, padding=1)
         # self.conv1 = nn.Conv2d(64, 64, kernel_size=5, stride=1, padding=1)
-        # self.fc0 = nn.Linear(57600, 1000)#64*36, 1000)
-        # self.fc1 = nn.Linear(1000, num_classes)
-        # self.criterion = nn.CrossEntropyLoss()
-        # self.optimizer = optim.SGD(self.parameters(), lr=learning_rate, momentum=0.2)
+        self.fc0 = nn.Linear(65536, 1000)#64*36, 1000)
+        self.fc1 = nn.Linear(1000, num_classes)
+        self.criterion = nn.CrossEntropyLoss()
+        self.optimizer = optim.SGD(self.parameters(), lr=learning_rate, momentum=0.2)
         
-    def str_convx(self, encoding, n):
-        return "self.conv{} = nn.Conv2d({}, {}, kernel_size={}, stride=1, padding={})\n".format(n, encoding.get('in_channels'), encoding.get('num_filters'), encoding.get('kernel_size'), encoding.get('padding'))
-
-    def str_fcx(self, encoding, n):
-        return "self.fc{} = nn.Linear({}, {})\n".format(n, encoding.get('inputs'), encoding.get('outputs'))
-
-    def gen_conv_encodings(self):
-        pass
-        # ((old_num_filters)^1/2-kernel_size+1)^2 = new_in_channels
-
-    def str_run_convx(self):
-        s = []
-        for i in range(1, len(self.conv_encodings)):
-            s.append('out = F.relu(self.conv{}(out))\n'.format(i))
-        return ''.join(s)
-
-    def str_run_fcx(self):
-        s = []
-        for i in range(0, len(self.fc_encodings)):
-            s.append('out = F.relu(self.fc{}(out))\n'.format(i))
-        return ''.join(s)
-
     def forward(self, x):
-        out = F.relu(self.conv0(x))
-        exec(self.str_run_convx())
-        # self.str_run_convx()
-        out = F.relu(out.reshape(out.size(0), -1))
-        print('[[[[[[[[[[[[[[[[[[[[[[[[[[[]]]]]]]]]]]]]]]]]]]]]]]]]]]')
-        exec(self.str_run_fcx())
-        return out
         
         #old forward:
-        # out = F.relu(self.conv0(x))
+        out = F.relu(self.conv0(x))
         # out = F.relu(self.conv1(out))
-        # out = F.relu(out.reshape(out.size(0), -1))
-        # out = self.fc0(out)
-        # out = self.fc1(out)
-        # return out
+        out = F.relu(out.reshape(out.size(0), -1))
+        out = self.fc0(out)
+        out = self.fc1(out)
+        return out
         
 
     def train_on_batch(self, in_batch, label_batch, epochs, learning_rate):
@@ -98,23 +57,25 @@ class ConvNet(nn.Module):
         return torch.max(self.forward(x), 1)
 
     
-    def clone(self, mutations=False):
+    def clone(self, point_mutations=False, add_filter=False):
         '''
         returns clone of net
         point mutates weights randomly if mutate=True
         '''
         # make clone
-        clone = ConvNet()
+        clone = ConvNetLive()
         clone.load_state_dict(self.state_dict())
-        if mutations:
+        if point_mutations:
             #conv1
-            clone.conv1.weight.data.add_(ConvNet.generate_mutations(self.conv1, .0005, 150))
+            clone.conv0.weight.data.add_(ConvNet.generate_mutations(self.conv1, .0005, 150))
             
             # fc1
-            clone.fc1.weight.data.add_(ConvNet.generate_mutations(self.fc1, .0005, 150))
+            clone.fc0.weight.data.add_(ConvNet.generate_mutations(self.fc1, .0005, 150))
 
             # fc2
-            clone.fc2.weight.data.add_(ConvNet.generate_mutations(self.fc2, .0005, 150))
+            clone.fc1.weight.data.add_(ConvNet.generate_mutations(self.fc2, .0005, 150))
+        if add_filter:
+        	pass
         return clone
 
     @staticmethod

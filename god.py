@@ -16,6 +16,7 @@ from os import listdir
 from os.path import isfile, join
 import progressbar
 from time import sleep
+from conv_net_live import ConvNetLive
 
 BAR = None
 BAR_V = 0
@@ -157,7 +158,7 @@ def load_pop(dirpath):
     return p
 
 def gen_pop(n):
-    return [ConvNet() for _ in range(n)]
+    return [ConvNetLive() for _ in range(n)]
 
 def eval_pop_random(pop, n, showbar=False):
     '''
@@ -204,7 +205,7 @@ def repopulate(pop, results, top_n):
         new_pop.append(pop[top_index])
     # fill in rest with mutations of top n
     for i in range(top_n, len(pop)):
-        new_buddy = new_pop[i%top_n].clone(mutations=True)
+        new_buddy = new_pop[i%top_n].clone(point_mutations=True)
         new_pop.append(new_buddy)
     # change pop in place
     pop = new_pop

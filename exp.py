@@ -1,10 +1,26 @@
-# classifier.py
-
+# exp.py
+from __future__ import absolute_import
+import layerspace
+import randomize_fn as rfn
+import mutate_fn as mfn
+import CustomModel_class as c
 import torch
 import torchvision
 import torchvision.transforms as transforms
-from conv_net import ConvNet
-from conv_net_live import ConvNetLive
+
+build_info = rfn.randomize_network()
+# print(build_info)
+net = c.CustomModel(build_info, 32, CUDA=False)
+print(net.model)
+
+
+
+
+
+
+
+
+
 
 transform = transforms.Compose(
     [transforms.ToTensor(),
@@ -24,43 +40,12 @@ classes = ('plane', 'car', 'bird', 'cat',
            'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
 
-# conv_encodings = [ConvNet.generate_conv_encoding(3, 64, 3, 1), ConvNet.generate_conv_encoding(64, 64, 5, 1)]
-# fc_encodings = [ConvNet.generate_fc_encoding(57600, 1000), ConvNet.generate_fc_encoding(1000, 10)]
-net = ConvNetLive()
-print(net)
-# net = ConvNet()
-
-
-
-for epoch in range(2):  # loop over the dataset multiple times
-
-    running_loss = 0.0
-    for i, data in enumerate(trainloader, 0):
-        # get the inputs
-        inputs, labels = data
-
-        # zero the parameter gradients
-        net.optimizer.zero_grad()
-
-        # forward + backward + optimize
-        outputs = net(inputs)
-        loss = net.criterion(outputs, labels)
-        loss.backward()
-        net.optimizer.step()
-
-        # print statistics
-        running_loss += loss.item()
-        if i % 2000 == 1999:    # print every 2000 mini-batches
-            print('[%d, %5d] loss: %.3f' %
-                  (epoch + 1, i + 1, running_loss / 2000))
-            running_loss = 0.0
-
 correct = 0
 total = 0
 with torch.no_grad():
     for data in testloader:
         images, labels = data
-        outputs = net(images)
+        outputs = net.model(images)
         _, predicted = torch.max(outputs.data, 1)
         total += labels.size(0)
         correct += (predicted == labels).sum().item()
