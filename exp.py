@@ -12,12 +12,11 @@ import torch.nn as nn
 
 build_info = rfn.randomize_network()
 # print(build_info)
-net = cmm.CustomModelMutable(build_info, 32, CUDA=False)
-print(net.model)
-net = net.clone()
-print(net.model)
+nett = cmm.CustomModelMutable(build_info, 32, CUDA=False)
 
-
+nett_clone = nett.clone()
+print(nett.model, nett_clone.model)
+nets = [nett, nett_clone]
 
 
 
@@ -40,54 +39,55 @@ celly/
 
 # structure of conv2d tensor (filters out, channels in, kernel size, kernel size)
 
+for net in nets:
+	print('\n\ndoing it00000000')
+
+	transform = transforms.Compose(
+	    [transforms.ToTensor(),
+	     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+
+	trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
+	                                        download=True, transform=transform)
+	trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
+	                                          shuffle=True, num_workers=2)
+
+	testset = torchvision.datasets.CIFAR10(root='./data', train=False,
+	                                       download=True, transform=transform)
+	testloader = torch.utils.data.DataLoader(testset, batch_size=4,
+	                                         shuffle=False, num_workers=2)
+
+	classes = ('plane', 'car', 'bird', 'cat',
+	           'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
 
-transform = transforms.Compose(
-    [transforms.ToTensor(),
-     transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
+	correct = 0
+	total = 0
+	with torch.no_grad():
+	    for data in testloader:
+	        images, labels = data
+	        outputs = net.model(images)
+	        _, predicted = torch.max(outputs.data, 1)
+	        total += labels.size(0)
+	        correct += (predicted == labels).sum().item()
 
-trainset = torchvision.datasets.CIFAR10(root='./data', train=True,
-                                        download=True, transform=transform)
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=4,
-                                          shuffle=True, num_workers=2)
+	print('Accuracy of the network on the 10000 test images: %d %%' % (
+	    100 * correct / total))
 
-testset = torchvision.datasets.CIFAR10(root='./data', train=False,
-                                       download=True, transform=transform)
-testloader = torch.utils.data.DataLoader(testset, batch_size=4,
-                                         shuffle=False, num_workers=2)
-
-classes = ('plane', 'car', 'bird', 'cat',
-           'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-
-
-correct = 0
-total = 0
-with torch.no_grad():
-    for data in testloader:
-        images, labels = data
-        outputs = net.model(images)
-        _, predicted = torch.max(outputs.data, 1)
-        total += labels.size(0)
-        correct += (predicted == labels).sum().item()
-
-print('Accuracy of the network on the 10000 test images: %d %%' % (
-    100 * correct / total))
-
-class_correct = list(0. for i in range(10))
-class_total = list(0. for i in range(10))
-with torch.no_grad():
-    for data in testloader:
-        images, labels = data
-        outputs = net.model(images)
-        _, predicted = torch.max(outputs, 1)
-        c = (predicted == labels).squeeze()
-        for i in range(4):
-            label = labels[i]
-            class_correct[label] += c[i].item()
-            class_total[label] += 1
+	class_correct = list(0. for i in range(10))
+	class_total = list(0. for i in range(10))
+	with torch.no_grad():
+	    for data in testloader:
+	        images, labels = data
+	        outputs = net.model(images)
+	        _, predicted = torch.max(outputs, 1)
+	        c = (predicted == labels).squeeze()
+	        for i in range(4):
+	            label = labels[i]
+	            class_correct[label] += c[i].item()
+	            class_total[label] += 1
 
 
-for i in range(10):
-    print('Accuracy of %5s : %2d %%' % (
-        classes[i], 100 * class_correct[i] / class_total[i]))
+	for i in range(10):
+	    print('Accuracy of %5s : %2d %%' % (
+	        classes[i], 100 * class_correct[i] / class_total[i]))
 

@@ -53,8 +53,9 @@ class CustomModelMutable():
 
 
         previous_units = compute_initial_fc_inputs(build_info, image_s)
+        print('previous_units: {}'.format(previous_units))
         self.model.add_module('flatten', Flatten()) 
-        print(previous_units)
+        # print(previous_units)
 
         # init fc layers
         for i, fc_layer_info in enumerate(build_info['fc_layers']):
@@ -135,10 +136,7 @@ class CustomModelMutable():
         num_added_filters = 1
         new_build_info = self.build_info
         new_build_info['conv_layers'][0]['n_filters']['val'] += num_added_filters
-        # print(new_build_info['conv_layers'][0])
         new_net = CustomModelMutable(new_build_info, self.image_size)
-        # print(self.model)
-        # print(new_net.model)
 
         # generate new filter(s) and add to new net
         new_size=self.model.conv_0.weight.size()
@@ -155,9 +153,9 @@ class CustomModelMutable():
         # update new layers to match old network
         i_to_mutate = 0
         is_last_conv_layer = (i_to_mutate==len(new_build_info['conv_layers'])-1)
-        # print(is_last_conv_layer)
         init_fc_inputs = compute_initial_fc_inputs(new_build_info, self.image_size)
-        # print("init fc inputs: {}".format(init_fc_inputs))
+        
+        # update new layers to match old net
         for i, layer in enumerate(new_net.model):
             # print(i, layer)
             if i != i_to_mutate:
@@ -166,43 +164,32 @@ class CustomModelMutable():
                     # print(i)
                 except(AttributeError):
                     pass
-        # correct new first fc layer if we're mutating the last conv layer
+        
+        # correct new first fc layer if we're mutating the last conv layer, weights are all 1's
         if is_last_conv_layer:
             new_fc0_weights = new_net.model.fc_0.weight.data
-            # print(new_fc0_weights)
             old_size = tuple(new_fc0_weights.size())
             target_size = (new_net.model.fc_0.out_features, new_net.model.fc_0.in_features)  
-            # print(old_size, target_size)
-            # print(torch.Tensor(old_size) - torch.Tensor(target_size))
             n_to_add = target_size[1] - old_size[1]
-            # print(n_to_add)
             ones = torch.ones(new_fc0_weights.size()[0], n_to_add)
-            print(target_size, ones.size())
             new_fc0_weights = torch.cat((new_fc0_weights, ones), dim=1)
-            print(new_fc0_weights.size())
             new_net.model.fc_0.weight.data = new_fc0_weights
-
 
         return new_net
 
 def compute_initial_fc_inputs(build_info, image_s):
     '''returns number of input layers for first fc layer given build info and image size (one side of square img)'''
     kernels = [l['kernel_size']['val'] for l in build_info['conv_layers']]
-    out_s = image_s
+    out_s = image_s + 2 #+2 for padding on each side
     for k in kernels:
-        out_s = (out_s-k+1)^2
+        out_s = (out_s-k+1)
     last_n_filters = build_info['conv_layers'][-1]['n_filters']['val']
     # print('FINAL: ', out_s, last_n_filters)
 
     return (last_n_filters) * (out_s**2)
     
 
-def compute_dim(orig_s, kernel_s):
-    ''' return side length of new image
-        given original image side length
-        and kernel side length
-        (squares only for both)'''
-    return (orig_s-kernel_s+1)^2
+
 
 def conv_output_shape(h_w, kernel_size=1, stride=1, pad=0, dilation=1):
     """

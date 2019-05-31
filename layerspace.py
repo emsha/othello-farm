@@ -6,7 +6,7 @@
 
 CONV_SPACE = dict()
 CONV_SPACE['n_filters'] = (4, 4, 'int', 0.05)
-CONV_SPACE['kernel_size'] = (5, 5, 'int', 0.05)
+CONV_SPACE['kernel_size'] = (3, 20, 'int', 0.05) # can't be bigger than image plus padding
 CONV_SPACE['activation'] =\
     (0,  ['linear', 'tanh', 'relu', 'sigmoid', 'elu'], 'list', 0.2)
 
