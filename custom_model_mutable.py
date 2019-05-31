@@ -120,6 +120,8 @@ class CustomModelMutable():
                                 weight_decay=build_info['weight_decay']['val'],
                                 momentum=0.9)
         self.optimizer = optimizer
+        self.criterion = nn.CrossEntropyLoss()
+        # print('OPTIMIZER: {}'.format(optimizer))
         self.cuda = False
         if CUDA:
             self.model.cuda()
@@ -142,7 +144,7 @@ class CustomModelMutable():
         new_size=self.model.conv_0.weight.size()
         filter_size = new_net.model.conv_0.kernel_size
         s = filter_size[0]
-        new_filter = torch.ones(filter_size)
+        new_filter = torch.zeros(filter_size)
         previous_channels = 3
         layer_i = 0
         if layer_i != 0:
@@ -171,7 +173,7 @@ class CustomModelMutable():
             old_size = tuple(new_fc0_weights.size())
             target_size = (new_net.model.fc_0.out_features, new_net.model.fc_0.in_features)  
             n_to_add = target_size[1] - old_size[1]
-            ones = torch.ones(new_fc0_weights.size()[0], n_to_add)
+            ones = torch.zeros(new_fc0_weights.size()[0], n_to_add)
             new_fc0_weights = torch.cat((new_fc0_weights, ones), dim=1)
             new_net.model.fc_0.weight.data = new_fc0_weights
 

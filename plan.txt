@@ -272,6 +272,274 @@ so each of these things has to have a lower bound, upper bound, a rate, and data
 may 31 2019 
 
 goal for today: implement clone method that can add a filter to the first conv layer.
+found a bug in def compute_initial_fc_inputs(build_info, image_s):
+fixed it
+implemented clone, testing it now
+feel ike im being very hacky rn. i'll clean it up later. bad practice, but some of these things I still don't understand fully. 
+
+I'm doing a test: training and testing a net, then cloning it and training and testing it again, this time with the extra filter, let's see how much better it'll do, no wait abort.
+
+here's my test for today:
+
+I train nett, then i clone him, and test nett_clone and nett
+they should behave similarly since new weights were initialized to 1. after this i'm done for the day I think
+
+
+here's the test output: maxshashoua@Maxs-MBP-2:~/Documents/Developer/othellofarm$ python3 exp.py 
+previous_units: 2916
+
+
+set up data:
+Files already downloaded and verified
+Files already downloaded and verified
+training a net
+/usr/local/Cellar/python3/3.6.3/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/torch/nn/modules/container.py:92: UserWarning: Implicit dimension choice for log_softmax has been deprecated. Change the call to include dim=X as an argument.
+  input = module(input)
+[1,  2000] loss: 2.316
+[1,  4000] loss: 2.306
+[1,  6000] loss: 2.300
+[1,  8000] loss: 2.291
+[1, 10000] loss: 2.284
+[1, 12000] loss: 2.279
+^[f[2,  2000] loss: 2.271
+[2,  4000] loss: 2.264
+[2,  6000] loss: 2.258
+[2,  8000] loss: 2.252
+[2, 10000] loss: 2.246
+[2, 12000] loss: 2.237
+previous_units: 3645
+Sequential(
+  (conv_0): Conv2d(3, 4, kernel_size=(8, 8), stride=(1, 1), padding=(1, 1))
+  (relu_0): ReLU()
+  (flatten): Flatten()
+  (fc_0): Linear(in_features=2916, out_features=196, bias=True)
+  (dropout_0): Dropout(p=0.667209393568471)
+  (sigm_0): Sigmoid()
+  (classification_layer): Linear(in_features=196, out_features=10, bias=True)
+  (sofmax): LogSoftmax()
+) Sequential(
+  (conv_0): Conv2d(3, 5, kernel_size=(8, 8), stride=(1, 1), padding=(1, 1))
+  (relu_0): ReLU()
+  (flatten): Flatten()
+  (fc_0): Linear(in_features=3645, out_features=196, bias=True)
+  (dropout_0): Dropout(p=0.667209393568471)
+  (sigm_0): Sigmoid()
+  (classification_layer): Linear(in_features=196, out_features=10, bias=True)
+  (sofmax): LogSoftmax()
+)
+Accuracy of the network on the 10000 test images: 21 %
+Accuracy of plane : 40 %
+Accuracy of   car : 10 %
+Accuracy of  bird :  5 %
+Accuracy of   cat : 15 %
+Accuracy of  deer :  6 %
+Accuracy of   dog : 13 %
+Accuracy of  frog : 45 %
+Accuracy of horse :  7 %
+Accuracy of  ship : 41 %
+Accuracy of truck : 32 %
+Accuracy of the network on the 10000 test images: 10 %
+Accuracy of plane :  0 %
+Accuracy of   car :  0 %
+Accuracy of  bird :  1 %
+Accuracy of   cat : 16 %
+Accuracy of  deer :  4 %
+Accuracy of   dog :  0 %
+Accuracy of  frog :  1 %
+Accuracy of horse :  0 %
+Accuracy of  ship : 79 %
+Accuracy of truck :  2 %
+
+
+the second net was the clone. so...maybe init to values very close to 0?
+lemme try init'ing to zero
+
+initting to zero, training net 1, cloning after train, testing output:
+this test was to see the diff between the trained net and the net cloned from the trained net, how good is it purely from the clone?
+maxshashoua@Maxs-MBP-2:~/Documents/Developer/othellofarm$ python3 exp.py 
+previous_units: 3364
+
+
+set up data:
+Files already downloaded and verified
+Files already downloaded and verified
+training a net
+/usr/local/Cellar/python3/3.6.3/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/torch/nn/modules/container.py:92: UserWarning: Implicit dimension choice for log_softmax has been deprecated. Change the call to include dim=X as an argument.
+  input = module(input)
+[1,  2000] loss: 2.024
+[1,  4000] loss: 1.877
+[1,  6000] loss: 1.821
+[1,  8000] loss: 1.790
+[1, 10000] loss: 1.774
+[1, 12000] loss: 1.751
+[2,  2000] loss: 1.722
+[2,  4000] loss: 1.712
+[2,  6000] loss: 1.730
+[2,  8000] loss: 1.697
+[2, 10000] loss: 1.698
+[2, 12000] loss: 1.696
+previous_units: 4205
+Sequential(
+  (conv_0): Conv2d(3, 4, kernel_size=(6, 6), stride=(1, 1), padding=(1, 1))
+  (tanh_0): Tanh()
+  (flatten): Flatten()
+  (fc_0): Linear(in_features=3364, out_features=327, bias=True)
+  (dropout_0): Dropout(p=0.39121718688057483)
+  (classification_layer): Linear(in_features=327, out_features=10, bias=True)
+  (sofmax): LogSoftmax()
+) Sequential(
+  (conv_0): Conv2d(3, 5, kernel_size=(6, 6), stride=(1, 1), padding=(1, 1))
+  (tanh_0): Tanh()
+  (flatten): Flatten()
+  (fc_0): Linear(in_features=4205, out_features=327, bias=True)
+  (dropout_0): Dropout(p=0.39121718688057483)
+  (classification_layer): Linear(in_features=327, out_features=10, bias=True)
+  (sofmax): LogSoftmax()
+)
+Accuracy of the network on the 10000 test images: 41 %
+Accuracy of plane : 53 %
+Accuracy of   car : 54 %
+Accuracy of  bird : 23 %
+Accuracy of   cat : 22 %
+Accuracy of  deer : 29 %
+Accuracy of   dog : 38 %
+Accuracy of  frog : 52 %
+Accuracy of horse : 46 %
+Accuracy of  ship : 49 %
+Accuracy of truck : 40 %
+Accuracy of the network on the 10000 test images: 38 %
+Accuracy of plane : 32 %
+Accuracy of   car : 51 %
+Accuracy of  bird : 12 %
+Accuracy of   cat :  6 %
+Accuracy of  deer : 38 %
+Accuracy of   dog : 23 %
+Accuracy of  frog : 73 %
+Accuracy of horse : 47 %
+Accuracy of  ship : 48 %
+Accuracy of truck : 50 %
+
+new test:
+train net 1, clone, test, train both nets, test again
+goal with this test is to see if the added filter can make the clone perform better after it's been trained, like can it make up its deficit from the mutation after one round of training?
+results:
+
+maxshashoua@Maxs-MBP-2:~/Documents/Developer/othellofarm$ python3 exp.py 
+previous_units: 3600
+
+
+set up data:
+Files already downloaded and verified
+Files already downloaded and verified
+training a net
+/usr/local/Cellar/python3/3.6.3/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/torch/nn/modules/container.py:92: UserWarning: Implicit dimension choice for log_softmax has been deprecated. Change the call to include dim=X as an argument.
+  input = module(input)
+[1,  2000] loss: 1.798
+[1,  4000] loss: 1.658
+[1,  6000] loss: 1.560
+[1,  8000] loss: 1.544
+[1, 10000] loss: 1.518
+[1, 12000] loss: 1.490
+[2,  2000] loss: 1.393
+[2,  4000] loss: 1.387
+[2,  6000] loss: 1.417
+[2,  8000] loss: 1.401
+[2, 10000] loss: 1.419
+[2, 12000] loss: 1.424
+previous_units: 4500
+Sequential(
+  (conv_0): Conv2d(3, 4, kernel_size=(5, 5), stride=(1, 1), padding=(1, 1))
+  (flatten): Flatten()
+  (fc_0): Linear(in_features=3600, out_features=204, bias=True)
+  (dropout_0): Dropout(p=0.047668292083812944)
+  (relu_0): ReLU()
+  (classification_layer): Linear(in_features=204, out_features=10, bias=True)
+  (sofmax): LogSoftmax()
+) Sequential(
+  (conv_0): Conv2d(3, 5, kernel_size=(5, 5), stride=(1, 1), padding=(1, 1))
+  (flatten): Flatten()
+  (fc_0): Linear(in_features=4500, out_features=204, bias=True)
+  (dropout_0): Dropout(p=0.047668292083812944)
+  (relu_0): ReLU()
+  (classification_layer): Linear(in_features=204, out_features=10, bias=True)
+  (sofmax): LogSoftmax()
+)
+testing both nets, only first net trained
+Accuracy of the network on the 10000 test images: 49 %
+Accuracy of plane : 63 %
+Accuracy of   car : 59 %
+Accuracy of  bird : 42 %
+Accuracy of   cat : 28 %
+Accuracy of  deer : 39 %
+Accuracy of   dog : 27 %
+Accuracy of  frog : 63 %
+Accuracy of horse : 58 %
+Accuracy of  ship : 62 %
+Accuracy of truck : 55 %
+Accuracy of the network on the 10000 test images: 32 %
+Accuracy of plane : 78 %
+Accuracy of   car : 64 %
+Accuracy of  bird : 22 %
+Accuracy of   cat : 17 %
+Accuracy of  deer :  4 %
+Accuracy of   dog : 15 %
+Accuracy of  frog :  7 %
+Accuracy of horse : 40 %
+Accuracy of  ship : 12 %
+Accuracy of truck : 58 %
+training both nets now
+training a net
+[1,  2000] loss: 1.289
+[1,  4000] loss: 1.312
+[1,  6000] loss: 1.319
+[1,  8000] loss: 1.337
+[1, 10000] loss: 1.358
+[1, 12000] loss: 1.352
+[2,  2000] loss: 1.226
+[2,  4000] loss: 1.229
+[2,  6000] loss: 1.268
+[2,  8000] loss: 1.257
+[2, 10000] loss: 1.290
+[2, 12000] loss: 1.291
+training a net
+[1,  2000] loss: 1.350
+[1,  4000] loss: 1.341
+[1,  6000] loss: 1.339
+[1,  8000] loss: 1.344
+[1, 10000] loss: 1.333
+[1, 12000] loss: 1.380
+[2,  2000] loss: 1.213
+[2,  4000] loss: 1.235
+[2,  6000] loss: 1.263
+[2,  8000] loss: 1.271
+[2, 10000] loss: 1.311
+[2, 12000] loss: 1.324
+testing both nets, net 1 trained twice, net 2 cloned frm net 1 post first training, then trained again, so almost like 1.5x trained, where net 1 is 2x trained
+Accuracy of the network on the 10000 test images: 50 %
+Accuracy of plane : 47 %
+Accuracy of   car : 56 %
+Accuracy of  bird : 35 %
+Accuracy of   cat : 22 %
+Accuracy of  deer : 56 %
+Accuracy of   dog : 40 %
+Accuracy of  frog : 53 %
+Accuracy of horse : 57 %
+Accuracy of  ship : 73 %
+Accuracy of truck : 60 %
+Accuracy of the network on the 10000 test images: 50 %
+Accuracy of plane : 63 %
+Accuracy of   car : 52 %
+Accuracy of  bird : 29 %
+Accuracy of   cat : 22 %
+Accuracy of  deer : 43 %
+Accuracy of   dog : 49 %
+Accuracy of  frog : 65 %
+Accuracy of horse : 54 %
+Accuracy of  ship : 65 %
+Accuracy of truck : 58 %
+
+so, i think this is a good place to stop. next step is to try the new filter if we have multiple conv layers. try to get this general cloning mutation thing for the conv part, then the fc part, then adding layers ok nice ok bai.
+
 ================______=================================
 ===============/      \==========================
 ==============/        \================================
