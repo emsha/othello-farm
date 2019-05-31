@@ -5,8 +5,8 @@
 # adapted from https://medium.com/@stathis/design-by-evolution-393e41863f98
 
 CONV_SPACE = dict()
-CONV_SPACE['n_filters'] = (8, 128, 'int', 0.05)
-CONV_SPACE['kernel_size'] = (3, 8, 'int', 0.05)
+CONV_SPACE['n_filters'] = (4, 4, 'int', 0.05)
+CONV_SPACE['kernel_size'] = (5, 5, 'int', 0.05)
 CONV_SPACE['activation'] =\
     (0,  ['linear', 'tanh', 'relu', 'sigmoid', 'elu'], 'list', 0.2)
 
@@ -23,3 +23,10 @@ NET_SPACE['lr'] = (0.0001, 0.1, 'float', 0.15)
 NET_SPACE['weight_decay'] = (0.00001, 0.0004, 'float', 0.2)
 NET_SPACE['optimizer'] =\
     (0, ['sgd', 'adam', 'adadelta', 'rmsprop'], 'list', 0.2)
+
+MUTATION_SPACE = dict()
+MUTATION_SPACE['point_mutation_rate'] = 0.01
+MUTATION_SPACE['add_conv_filter_rate'] = 0.1
+MUTATION_SPACE['add_conv_layer_rate'] = 0.1
+MUTATION_SPACE['add_fc_node_rate'] = 0.1
+MUTATION_SPACE['add_fc_layer_rate'] = 0.1

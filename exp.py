@@ -4,13 +4,17 @@ import layerspace
 import randomize_fn as rfn
 import mutate_fn as mfn
 import CustomModel_class as c
+import custom_model_mutable as cmm
 import torch
 import torchvision
 import torchvision.transforms as transforms
+import torch.nn as nn
 
 build_info = rfn.randomize_network()
 # print(build_info)
-net = c.CustomModel(build_info, 32, CUDA=False)
+net = cmm.CustomModelMutable(build_info, 32, CUDA=False)
+print(net.model)
+net = net.clone()
 print(net.model)
 
 
@@ -19,6 +23,22 @@ print(net.model)
 
 
 
+
+
+
+
+
+
+
+'''
+steps:
+init new nn.conv2d layer of size, new size
+init new tensor parameter or tensor of new size. concatenate or somehow create mew tensor
+point weight of new sized conv2d layer to new tensor
+celly/ 
+'''
+
+# structure of conv2d tensor (filters out, channels in, kernel size, kernel size)
 
 
 
@@ -58,7 +78,7 @@ class_total = list(0. for i in range(10))
 with torch.no_grad():
     for data in testloader:
         images, labels = data
-        outputs = net(images)
+        outputs = net.model(images)
         _, predicted = torch.max(outputs, 1)
         c = (predicted == labels).squeeze()
         for i in range(4):
@@ -70,3 +90,4 @@ with torch.no_grad():
 for i in range(10):
     print('Accuracy of %5s : %2d %%' % (
         classes[i], 100 * class_correct[i] / class_total[i]))
+

@@ -43,3 +43,5 @@ def randomize_network(bounded=True):
     net['fc_layers'] = fc_layers
 
     return net
+
+    

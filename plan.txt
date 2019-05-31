@@ -252,7 +252,26 @@ https://medium.com/@stathis/design-by-evolution-393e41863f98
 May 30, 2019
 
 I finished implementing the custom model class from the medium article, and adapted it to my model with the conv layers then the fc layer. I finally figured out how to compute the input to the first fc layer. yayayayayayayay. good shit good shit good shit boi.
+
+
+ideas for mutation
+
+- im so close to being able to add a filter. i think i know how now. so...
+rules for mutation:
+	CLONE() can mutate in a few ways:
+		- point mutation
+		- add a filter to one or multiple conv layers
+		- add a new conv layer 
+		- add a new fc layer
+		- add a new node in the fc layer
+		- change activation fn
+		- change dropout
+
+so each of these things has to have a lower bound, upper bound, a rate, and data type. need to implement new custom mutate functions. aka, instead of if mutate: sample, it's gonna be if mutate: grow/increment. can keep random sampling for initial inits, but for growing, should be pretty incremental i think
 =======================================================
+may 31 2019 
+
+goal for today: implement clone method that can add a filter to the first conv layer.
 ================______=================================
 ===============/      \==========================
 ==============/        \================================

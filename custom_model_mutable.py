@@ -10,9 +10,9 @@ import torch.nn.functional as F
 import torch.optim as optim
 import random
 
-class CustomModel():
+class CustomModelMutable():
 
-    def __init__(self, build_info, image_s, CUDA=True):
+    def __init__(self, build_info, image_s, CUDA=False):
 
 
         # image_s is a side of the square image
@@ -21,7 +21,7 @@ class CustomModel():
         self.model = nn.Sequential()
         self.image_size = image_s
         self.build_info = build_info
-        
+
         for i, conv_layer_info in enumerate(build_info['conv_layers']):
             i = str(i)
             self.model.add_module(
@@ -123,6 +123,67 @@ class CustomModel():
         if CUDA:
             self.model.cuda()
             self.cuda = True
+    def clone(self):
+        ''' 
+            currently returns a new instance of CustomModelMutable 
+            with identical weights and shape 
+            except for the first conv layer,
+            which has an added filter initialized to all ones
+        '''
+        
+        # initialize build info and new net
+        num_added_filters = 1
+        new_build_info = self.build_info
+        new_build_info['conv_layers'][0]['n_filters']['val'] += num_added_filters
+        # print(new_build_info['conv_layers'][0])
+        new_net = CustomModelMutable(new_build_info, self.image_size)
+        # print(self.model)
+        # print(new_net.model)
+
+        # generate new filter(s) and add to new net
+        new_size=self.model.conv_0.weight.size()
+        filter_size = new_net.model.conv_0.kernel_size
+        s = filter_size[0]
+        new_filter = torch.ones(filter_size)
+        previous_channels = 3
+        layer_i = 0
+        if layer_i != 0:
+            previous_channels = new_build_info['conv_layers'][layer_i-1]['n_filters']['val']
+        new_weights = torch.cat((self.model.conv_0.weight.data, new_filter.expand(num_added_filters, previous_channels, s, s)))
+        new_net.model.conv_0.weight.data = new_weights
+
+        # update new layers to match old network
+        i_to_mutate = 0
+        is_last_conv_layer = (i_to_mutate==len(new_build_info['conv_layers'])-1)
+        # print(is_last_conv_layer)
+        init_fc_inputs = compute_initial_fc_inputs(new_build_info, self.image_size)
+        # print("init fc inputs: {}".format(init_fc_inputs))
+        for i, layer in enumerate(new_net.model):
+            # print(i, layer)
+            if i != i_to_mutate:
+                try:
+                    new_net.model[i].weight.data = self.model[i].weight.data
+                    # print(i)
+                except(AttributeError):
+                    pass
+        # correct new first fc layer if we're mutating the last conv layer
+        if is_last_conv_layer:
+            new_fc0_weights = new_net.model.fc_0.weight.data
+            # print(new_fc0_weights)
+            old_size = tuple(new_fc0_weights.size())
+            target_size = (new_net.model.fc_0.out_features, new_net.model.fc_0.in_features)  
+            # print(old_size, target_size)
+            # print(torch.Tensor(old_size) - torch.Tensor(target_size))
+            n_to_add = target_size[1] - old_size[1]
+            # print(n_to_add)
+            ones = torch.ones(new_fc0_weights.size()[0], n_to_add)
+            print(target_size, ones.size())
+            new_fc0_weights = torch.cat((new_fc0_weights, ones), dim=1)
+            print(new_fc0_weights.size())
+            new_net.model.fc_0.weight.data = new_fc0_weights
+
+
+        return new_net
 
 def compute_initial_fc_inputs(build_info, image_s):
     '''returns number of input layers for first fc layer given build info and image size (one side of square img)'''
@@ -131,7 +192,7 @@ def compute_initial_fc_inputs(build_info, image_s):
     for k in kernels:
         out_s = (out_s-k+1)^2
     last_n_filters = build_info['conv_layers'][-1]['n_filters']['val']
-    print('FINAL: ', out_s, last_n_filters)
+    # print('FINAL: ', out_s, last_n_filters)
 
     return (last_n_filters) * (out_s**2)
     
