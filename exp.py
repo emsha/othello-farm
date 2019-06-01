@@ -14,9 +14,9 @@ build_info = rfn.randomize_network(bounded=False)
 # print(build_info['conv_layers'].__class__)
 nett = cmm.CustomModelMutable(build_info, 32, CUDA=False)
 print(nett.model)
-# new_net = nett.clone()
-# print(new_net.model)
-nets = [nett]
+new_net = nett.clone()
+print(new_net.model)
+nets = [new_net]
 
 
 

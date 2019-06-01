@@ -540,6 +540,8 @@ Accuracy of truck : 58 %
 
 so, i think this is a good place to stop. next step is to try the new filter if we have multiple conv layers. try to get this general cloning mutation thing for the conv part, then the fc part, then adding layers ok nice ok bai.
 
+
+ok just fixed a bug in the compute_input_features for fc layer fn put the out_s+=2 inside the loop otherwise it would be wrong. now I can make nets with multiple conv layers, and the fc layer works out. i think it's time to move on to puttin that conv mutation anywhere on the multiple layers! but not today. today now is for climbing and hot sauce and music. goodbye...for now.
 ================______=================================
 ===============/      \==========================
 ==============/        \================================
