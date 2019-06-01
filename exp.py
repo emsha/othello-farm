@@ -10,10 +10,17 @@ import torchvision
 import torchvision.transforms as transforms
 import torch.nn as nn
 
-build_info = rfn.randomize_network()
-# print(build_info)
+build_info = rfn.randomize_network(bounded=False)
+# print(build_info['conv_layers'].__class__)
 nett = cmm.CustomModelMutable(build_info, 32, CUDA=False)
+print(nett.model)
+# new_net = nett.clone()
+# print(new_net.model)
 nets = [nett]
+
+
+
+
 
 
 print('\n\nset up data:')
@@ -60,7 +67,7 @@ for net in nets:
 	            print('[%d, %5d] loss: %.3f' %
 	                  (epoch + 1, i + 1, running_loss / 2000))
 	            running_loss = 0.0
-# '''
+'''
 # clone
 nett_clone = nett.clone()
 nets.append(nett_clone)
@@ -162,3 +169,4 @@ for net in nets:
 	for i in range(10):
 	    print('Accuracy of %5s : %2d %%' % (
 	        classes[i], 100 * class_correct[i] / class_total[i]))
+'''

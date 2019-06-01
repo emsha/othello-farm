@@ -21,9 +21,11 @@ class CustomModelMutable():
         self.model = nn.Sequential()
         self.image_size = image_s
         self.build_info = build_info
-
+        # print(build_info)
         for i, conv_layer_info in enumerate(build_info['conv_layers']):
             i = str(i)
+            # print("nfilters class is:{}".format(conv_layer_info['n_filters']['val'].__class__))
+            # print("prev channels class is:{}".format(previous_channels.__class__))
             self.model.add_module(
                 'conv_' + i,
                 nn.Conv2d(previous_channels, conv_layer_info['n_filters']['val'], kernel_size=conv_layer_info['kernel_size']['val'], stride=1, padding=1)
@@ -49,7 +51,8 @@ class CustomModelMutable():
                     'elu_'+i,
                     nn.ELU()
                 )
-            previous_channels = conv_layer_info['n_filters']
+            # print("\n\n\n", conv_layer_info, '\n\n\n')
+            previous_channels = conv_layer_info['n_filters']['val']
 
 
         previous_units = compute_initial_fc_inputs(build_info, image_s)
@@ -182,12 +185,15 @@ class CustomModelMutable():
 def compute_initial_fc_inputs(build_info, image_s):
     '''returns number of input layers for first fc layer given build info and image size (one side of square img)'''
     kernels = [l['kernel_size']['val'] for l in build_info['conv_layers']]
-    out_s = image_s + 2 #+2 for padding on each side
+    out_s = image_s #+2 #+2 for padding on each side
+    # print('out_s: {}'.format(out_s))
     for k in kernels:
+        print('out_s: {}'.format(out_s))
+        out_s += 2
         out_s = (out_s-k+1)
+    print('out_s: {}'.format(out_s))
     last_n_filters = build_info['conv_layers'][-1]['n_filters']['val']
-    # print('FINAL: ', out_s, last_n_filters)
-
+    print('FINAL: ', out_s, last_n_filters)
     return (last_n_filters) * (out_s**2)
     
 
