@@ -129,14 +129,16 @@ class CustomModelMutable():
         if CUDA:
             self.model.cuda()
             self.cuda = True
+    
     def clone(self):
         ''' 
+            TODO: UPDATE DATA
             currently returns a new instance of CustomModelMutable 
             with identical weights and shape 
             except for the first conv layer,
             which has an added filter initialized to all ones
         '''
-        
+        print('\n--------CLONING-------\n')
         # initialize build info and new net
         num_added_filters = 1
         new_build_info = self.build_info
@@ -169,7 +171,6 @@ class CustomModelMutable():
                     # print(i)
                 except(AttributeError):
                     pass
-        
         # correct new first fc layer if we're mutating the last conv layer, weights are all 1's
         if is_last_conv_layer:
             new_fc0_weights = new_net.model.fc_0.weight.data
@@ -179,7 +180,33 @@ class CustomModelMutable():
             ones = torch.zeros(new_fc0_weights.size()[0], n_to_add)
             new_fc0_weights = torch.cat((new_fc0_weights, ones), dim=1)
             new_net.model.fc_0.weight.data = new_fc0_weights
+        else:
+            next_conv_data = new_net.model.conv_1.weight.data
+            print("old size: {}".format(new_net.model.conv_1.weight.data.size()))
+            new_ch_in = new_net.model.conv_0.out_channels
+            new_fltr_s = new_net.model.conv_1.kernel_size
+            new_ch_out = new_net.model.conv_1.out_channels
+            s = new_fltr_s[0]
+            new_filter = torch.zeros(1)
 
+            new_filter = new_filter.expand(new_ch_out, 1, s, s)
+            new_weights = torch.cat((self.model.conv_1.weight.data, new_filter), 1)
+
+            new_net.model.conv_1.weight.data = new_weights
+            # print("new size: {}".format(new_net.model.conv_1.weight.data.size()))
+
+
+            # print(old_size, target_size)
+
+            '''
+                TODO: when changing conv layer, we've accounted for it being the last conv layer
+                    now we have to account for there being other conv layer after it
+                    update channels of next layer
+                    need to do more init of filters
+                    eventually should put this change conv layer thing into a function
+
+            '''
+        print('\n--------DONE CLONING-------\n')
         return new_net
 
 def compute_initial_fc_inputs(build_info, image_s):
@@ -188,12 +215,12 @@ def compute_initial_fc_inputs(build_info, image_s):
     out_s = image_s #+2 #+2 for padding on each side
     # print('out_s: {}'.format(out_s))
     for k in kernels:
-        print('out_s: {}'.format(out_s))
+        # print('out_s: {}'.format(out_s))
         out_s += 2
         out_s = (out_s-k+1)
-    print('out_s: {}'.format(out_s))
+    # print('out_s: {}'.format(out_s))
     last_n_filters = build_info['conv_layers'][-1]['n_filters']['val']
-    print('FINAL: ', out_s, last_n_filters)
+    # print('FINAL: ', out_s, last_n_filters)
     return (last_n_filters) * (out_s**2)
     
 

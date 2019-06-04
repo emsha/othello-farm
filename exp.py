@@ -11,14 +11,19 @@ import torchvision.transforms as transforms
 import torch.nn as nn
 
 build_info = rfn.randomize_network(bounded=False)
-# print(build_info['conv_layers'].__class__)
+# print(build_info['conv_layers'])
 nett = cmm.CustomModelMutable(build_info, 32, CUDA=False)
-print(nett.model)
+# print(nett.model)
+print('NET\n', nett.model.conv_0, '\n', nett.model.conv_1)
 new_net = nett.clone()
-print(new_net.model)
+print('new_net\n', new_net.model.conv_0, '\n', new_net.model.conv_1)
+
+# print('\n\n')
+# print(new_net.build_info['conv_layers'])
+# print(new_net.model)
 nets = [new_net]
-
-
+# print(new_net.model.conv_0.weight.data.size())
+# print(new_net.model.conv_1.weight.data.size())
 
 
 
