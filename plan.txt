@@ -551,6 +551,44 @@ ok just fixed a bug in the compute_input_features for fc layer fn put the out_s+
 ==============\ \___/  /================================
 ===============\______/=================================
 =======================================================
+Monday June 3 2019
+
+today i fixed a bug that i knew i had made. It was this:
+
+before today, I had successfully performed a mutation-cloning where the new net has the same weights and structure as the old net, except for the first (AND ONLY) conv layer now has one new filter. the second layer in the net (THE FIRST FC LAYER) updates to accomodate the new filters. yay,
+
+what was new today was that I allowed for multiple convolutional layers. This means that the layer after the mutation is NO LONGER the first FC layer, and is instead a second convolutional layer. so what I did today was allow for that convolutional layer following the layer with the mutation to accomodate the extra channel it now has to listen to. The initializations of the layers were fine, but when i reassigned the weight.data of the layers, I never actually changed the shape of the tensors, so the model expedted the data to be bigger (have one more channel in) than it actually did. now this is fixed. 
+
+the next step is to decide how to encode where the mutation happens, and let this conv filter addition occur anywhere in the convolutional section of the network.
+=======================================================
+Monday June 10, 2019
+
+I generalized adding a conv filter to work on any layer i want. I'm getting an error when i try to clone a second time from the original:
+
+build_info = rfn.randomize_network(bounded=False)
+n0 = cmm.CustomModelMutable(build_info, 32, CUDA=False)
+# print(n0.model)
+n0_0 = n0.clone_with_added_filter(0)
+n0_1 = n0.clone_with_added_filter(1) ## here's the error, it's a size mismatch runtime error on line 184. i'm worried im accidentally changing the original net so that when i try to clone again it doesn't work. nuts. 
+=======================================================
+wed june 12, 2019
+
+did a few testies and figured out that if i'm cloneing and adding a filter to the same layer from the same parent net, 
+i.e.:
+
+n0_0 = n0.clone_with_added_filter(0) # also 1, 1 and 2, 2
+n0_1 = n0.clone_with_added_filter(0)
+
+, it doesn't break. hmmm. sizes of weights are all the same
+
+=======================================================
+Thurs June 13 2019
+
+I figured out the bug! because i wasn't deep copying the build info, the info on net0 was being changed when i cloned it. so i added the deep copy and it's all good now
+=======================================================
+=======================================================
+=======================================================
+=======================================================
 =======================================================
 =======================================================
 =======================================================

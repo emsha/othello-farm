@@ -9,6 +9,7 @@ from stateB import State
 import torch.nn.functional as F
 import torch.optim as optim
 import random
+import copy
 
 class CustomModelMutable():
 
@@ -56,7 +57,7 @@ class CustomModelMutable():
 
 
         previous_units = compute_initial_fc_inputs(build_info, image_s)
-        print('previous_units: {}'.format(previous_units))
+        # print('previous_units: {}'.format(previous_units))
         self.model.add_module('flatten', Flatten()) 
         # print(previous_units)
 
@@ -129,8 +130,121 @@ class CustomModelMutable():
         if CUDA:
             self.model.cuda()
             self.cuda = True
-    
-    def clone(self):
+
+    def clone_with_added_filter(self, n):
+        '''
+            return clone net with added filter at conv layer n
+        '''
+        # print("ADD TO CONV_{}".format(n))
+        l_cur_old = None
+        l_cur = None
+        l_next = None
+        l_next_old = None
+        l_cur_i = None
+        conv_list_old = [(n, m) for (n, m) in self.model.named_modules() if m.__class__ == torch.nn.modules.conv.Conv2d] 
+        # for name, layer in conv_list_old:
+            # print(name, layer.weight.data.size(), layer)
+        if not 0 <= n < len(conv_list_old):
+            raise Exception('net.clone_with_added_filter(n): n is not between 0 and num conv layers')
+        # init new net
+        n_filters = 1
+        new_build_info = copy.deepcopy(self.build_info)
+        new_build_info['conv_layers'][n]['n_filters']['val'] += n_filters
+        new_net = CustomModelMutable(new_build_info, self.image_size)
+
+        # get layers to change
+        conv_list = [(n, m) for (n, m) in new_net.model.named_modules() if m.__class__ == torch.nn.modules.conv.Conv2d]        
+        
+        # print('old:')
+        # for l in self.build_info.get('conv_layers'):
+            # print(l)
+
+        # print("new:")
+        # for l in new_build_info.get('conv_layers'):
+        #     print(l)
+
+        
+        l_cur_old = conv_list_old[n][1]
+        l_cur = conv_list[n][1]
+        if n != len(conv_list_old) - 1:
+            l_next_old = conv_list_old[n+1][1]
+            l_next = conv_list[n+1][1]
+
+        # print(l_cur)
+        # print(l_next)
+
+        # '''
+        # generate new filter(s) and add to new net
+        # new_size=self.model.conv_0.weight.size()
+        filter_size = l_cur.kernel_size
+        s = filter_size[0]
+        new_filter = torch.zeros(filter_size)
+        previous_channels = 3
+        if n != 0:
+            previous_channels = l_cur.in_channels
+        # print('prev channels: {}'.format(previous_channels))
+        # print(self.model)
+        # print(n)
+        # print(new_net.model)
+        # print(l_cur_old)
+        # print(l_cur_old.weight.data.size())
+        # print(n_filters, previous_channels)
+        # print(new_filter.expand(n_filters, previous_channels, s, s).size())
+        # print('\ninside clone\n')
+        # print('old weight size', l_cur_old.weight.data.size())
+        # print('new filter size', new_filter.size())
+        # print('num to add', n_filters)
+        # print('prev channels', previous_channels)
+        # print(s)
+        # print('----------')
+        new_weights = torch.cat((l_cur_old.weight.data, new_filter.expand(n_filters, previous_channels, s, s)))
+        
+        # update new layers to match old network
+        # is_last_conv_layer = (n==len(new_build_info['conv_layers'])-1)
+        init_fc_inputs = compute_initial_fc_inputs(new_build_info, self.image_size)
+        # update new layers to match old net
+        for i, layer in enumerate(new_net.model):
+        
+            # print(i, layer)
+            # if i != l_cur_i:
+            try:
+                new_net.model[i].weight.data = self.model[i].weight.data
+                # print(i)
+            except(AttributeError):
+                # print('aterror)')
+                pass
+        l_cur.weight.data = new_weights
+        # correct new first fc layer if we're mutating the last conv layer
+        if not l_next:
+            # print('changing last conv layer___________')
+            new_fc0_weights = new_net.model.fc_0.weight.data
+            old_size = tuple(new_fc0_weights.size())
+            target_size = (new_net.model.fc_0.out_features, new_net.model.fc_0.in_features)  
+            n_to_add = target_size[1] - old_size[1]
+            ones = torch.zeros(new_fc0_weights.size()[0], n_to_add)
+            new_fc0_weights = torch.cat((new_fc0_weights, ones), dim=1)
+            new_net.model.fc_0.weight.data = new_fc0_weights
+        else:
+            next_conv_data = l_next.weight.data
+            # print("old size:
+            # {}".format(new_net.model.conv_1.weight.data.size()))
+            new_ch_in = l_cur.out_channels
+            new_fltr_s = l_next.kernel_size
+            new_ch_out = l_next.out_channels
+            s = new_fltr_s[0]
+            new_filter = torch.zeros(1)
+
+            new_filter = new_filter.expand(new_ch_out, 1, s, s)
+            new_weights = torch.cat((l_next_old.weight.data, new_filter), 1)
+
+            l_next.weight.data = new_weights
+        
+        # print(new_net.model)
+        # print([l for l in new_net.build_info['fc_layers']])
+        # print(new_net.model.fc_0.weight.data.size())
+        return new_net
+
+    def clone(self, add_conv_layer=False):
         ''' 
             TODO: UPDATE DATA
             currently returns a new instance of CustomModelMutable 
@@ -139,6 +253,31 @@ class CustomModelMutable():
             which has an added filter initialized to all ones
         '''
         print('\n--------CLONING-------\n')
+        conv_list = []
+        for i, m in enumerate(self.model.modules()):
+            if m.__class__ == torch.nn.modules.conv.Conv2d:
+                conv_list.append(m)
+        print(self.model)
+        name_to_mutate = None
+        name_after_to_mutate = None
+        named_conv_list = [(n, m) for (n, m) in self.model.named_modules() if m.__class__ == torch.nn.modules.conv.Conv2d]
+        conv_i_to_mutate = random.choice(list(range(len(named_conv_list))))
+        name_to_mutate = named_conv_list[conv_i_to_mutate][0]
+        is_last_conv_layer = False
+        # print(named_conv_list)
+        try:
+            name_after_to_mutate = named_conv_list[conv_i_to_mutate+1][0]
+        except:
+            pass
+
+        print(name_to_mutate)
+        print(name_after_to_mutate)
+        if not name_after_to_mutate:
+            print('mutating final conv layer')
+        
+
+
+                #, m.__class__)
         # initialize build info and new net
         num_added_filters = 1
         new_build_info = self.build_info
@@ -182,7 +321,7 @@ class CustomModelMutable():
             new_net.model.fc_0.weight.data = new_fc0_weights
         else:
             next_conv_data = new_net.model.conv_1.weight.data
-            print("old size: {}".format(new_net.model.conv_1.weight.data.size()))
+            # print("old size: {}".format(new_net.model.conv_1.weight.data.size()))
             new_ch_in = new_net.model.conv_0.out_channels
             new_fltr_s = new_net.model.conv_1.kernel_size
             new_ch_out = new_net.model.conv_1.out_channels
