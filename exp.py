@@ -9,6 +9,8 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 import torch.nn as nn
+import random
+import copy
 
 
 transform = transforms.Compose(
@@ -29,11 +31,11 @@ classes = ('plane', 'car', 'bird', 'cat',
            'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
 
-def train_net(net):
-	print("training a net")
-	for epoch in range(1):  # loop over the dataset multiple times
+def train_net(net, epochs):
+	print("    training a net")
+	for epoch in range(epochs):  # loop over the dataset multiple times
 	    running_loss = 0.0
-	    for i, data in enumerate(trainloader, 0):
+	    for i, data in enumerate(random.sample(list(trainloader), 1000), 0):
 	        # get the inputs
 	        inputs, labels = data
 
@@ -48,191 +50,100 @@ def train_net(net):
 
 	        # print statistics
 	        running_loss += loss.item()
-	        if i % 2000 == 1999:    # print every 2000 mini-batches
+	        if i % 500 == 499:    # print every 2000 mini-batches
 	            print('[%d, %5d] loss: %.3f' %
-	                  (epoch + 1, i + 1, running_loss / 2000))
+	                  (epoch + 1, i + 1, running_loss / 500))
 	            running_loss = 0.0
 
-
-def train_nets(l):
-	for net in l:
-		train_net(net)
-
-
-
-build_info = rfn.randomize_network(bounded=False)
-n0 = cmm.CustomModelMutable(build_info, 32, CUDA=False)
-# print(n0.model)
-# print('pre clone')
-# print(n0.model.conv_0.weight.data.size())
-# print(n0.model.conv_1.weight.data.size())
-# print(n0.model.conv_2.weight.data.size())
-# print(n0.build_info)
-n0_0 = n0.clone_with_added_filter(2)
-# print('\n\npost clone:')
-# print(n0.model.conv_0.weight.data.size())
-# print(n0.model.conv_1.weight.data.size())
-# print(n0.model.conv_2.weight.data.size())
-# print(n0.build_info)
-n0_1 = n0.clone_with_added_filter(2)
-# n0_2 = n0.clone_with_added_filter(2)
-
-# leest = []
-# leest.append(n0)
-# leest.append(n0_0)
-# leest.append(n0_1)
-# leest.append(n0_2)
-# print(n1.model)
-
-train_net(n0_0)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-'''
-for g in range(5):
-	print('generation {}'.format(g))
+def train_nets(nets, epochs):
 	for net in nets:
-		print("training a net")
-		for epoch in range(1):  # loop over the dataset multiple times
+		train_net(net, epochs)
 
-		    running_loss = 0.0
-		    for i, data in enumerate(trainloader, 0):
-		        # get the inputs
-		        inputs, labels = data
+def test_nets(nets):
+	res = []
+	for net in nets:
 
-		        # zero the parameter gradients
-		        net.optimizer.zero_grad()
+		correct = 0
+		total = 0
+		with torch.no_grad():
+		    for data in testloader:
+		        images, labels = data
+		        outputs = net.model(images)
+		        _, predicted = torch.max(outputs.data, 1)
+		        total += labels.size(0)
+		        correct += (predicted == labels).sum().item()
 
-		        # forward + backward + optimize
-		        outputs = net.model(inputs)
-		        loss = net.criterion(outputs, labels)
-		        loss.backward()
-		        net.optimizer.step()
+		print('Accuracy of the network on the 10000 test images: %d %%' % (
+		    100 * correct / total))
 
-		        # print statistics
-		        running_loss += loss.item()
-		        if i % 2000 == 1999:    # print every 2000 mini-batches
-		            print('[%d, %5d] loss: %.3f' %
-		                  (epoch + 1, i + 1, running_loss / 2000))
-		            running_loss = 0.0
-	print('clone last net')
-	nets.append(nets[-1].clone())
-	print([net for net.model in nets])
-
-# clone
-# nett_clone = nett.clone()
-# nets.append(nett_clone)
-
-# print(nett.model, nett_clone.model)
-# test nets
-# print("testing both nets, only first net trained")
-for i, net in enumerate(nets):
-
-	correct = 0
-	total = 0
-	with torch.no_grad():
-	    for data in testloader:
-	        images, labels = data
-	        outputs = net.model(images)
-	        _, predicted = torch.max(outputs.data, 1)
-	        total += labels.size(0)
-	        correct += (predicted == labels).sum().item()
-
-	print('Accuracy of network %i on the 10000 test images: %d %%' % (i, 
-	    100 * correct / total))
-
-	class_correct = list(0. for i in range(10))
-	class_total = list(0. for i in range(10))
-	with torch.no_grad():
-	    for data in testloader:
-	        images, labels = data
-	        outputs = net.model(images)
-	        _, predicted = torch.max(outputs, 1)
-	        c = (predicted == labels).squeeze()
-	        for i in range(4):
-	            label = labels[i]
-	            class_correct[label] += c[i].item()
-	            class_total[label] += 1
+		res.append(correct/total)
+		# class_correct = list(0. for i in range(10))
+		# class_total = list(0. for i in range(10))
+		# with torch.no_grad():
+		#     for data in testloader:
+		#         images, labels = data
+		#         outputs = net.model(images)
+		#         _, predicted = torch.max(outputs, 1)
+		#         c = (predicted == labels).squeeze()
+		#         for i in range(4):
+		#             label = labels[i]
+		#             class_correct[label] += c[i].item()
+		#             class_total[label] += 1
 
 
-	for i in range(10):
-	    print('Accuracy of %5s : %2d %%' % (
-	        classes[i], 100 * class_correct[i] / class_total[i]))
+		# for i in range(10):
+		#     print('Accuracy of %5s : %2d %%' % (
+		#         classes[i], 100 * class_correct[i] / class_total[i]))
+	return res
 
-print("training both nets now")
-# train both nets
-for net in nets:
-	print("training a net")
-	for epoch in range(2):  # loop over the dataset multiple times
+def evolve_nets(nets, res, top_n):
+	# get top n
+	top_n_i = sorted(range(len(res)), key = lambda i: res[i], reverse=True)[:top_n]
+	top_nets = [nets[i] for i in top_n_i]
+	n_dead = len(nets)-top_n
+	l = []
+	for i in range(n_dead):
+		j = i%top_n
+		l.append(j)
+		nets[i+top_n] = nets[j].clone_add_filter_rand()
+	print('    added {}'.format(l))
 
-	    running_loss = 0.0
-	    for i, data in enumerate(trainloader, 0):
-	        # get the inputs
-	        inputs, labels = data
+def gen_population(s):
+	p = []
+	for i in range(s):
+		build_info = rfn.randomize_network(bounded=False)
+		p.append(cmm.CustomModelMutable(build_info, 32, CUDA=False))
+	return p
 
-	        # zero the parameter gradients
-	        net.optimizer.zero_grad()
+def print_pop(p):
+	for i, net in enumerate(p):
+		
+		print(i, '\n\n        ')
+		net.print_conv_layers()
 
-	        # forward + backward + optimize
-	        outputs = net.model(inputs)
-	        loss = net.criterion(outputs, labels)
-	        loss.backward()
-	        net.optimizer.step()
+# b = rfn.randomize_network(bounded=False)
+# cmm.CustomModelMutable(b, 32, CUDA=False).clone_add_filter_rand()
 
-	        # print statistics
-	        running_loss += loss.item()
-	        if i % 2000 == 1999:    # print every 2000 mini-batches
-	            print('[%d, %5d] loss: %.3f' %
-	                  (epoch + 1, i + 1, running_loss / 2000))
-	            running_loss = 0.0
+# print('SETUPGLOBALS')
+# g = 3
+# e = 1
+# pop = gen_population(4)
+# for generation in range(g):
 
-# print('testing both nets, net 1 trained twice, net 2 cloned frm net 1 post first training, then trained again, so almost like 1.5x trained, where net 1 is 2x trained')
-# test nets
-for net in nets:
-
-	correct = 0
-	total = 0
-	with torch.no_grad():
-	    for data in testloader:
-	        images, labels = data
-	        outputs = net.model(images)
-	        _, predicted = torch.max(outputs.data, 1)
-	        total += labels.size(0)
-	        correct += (predicted == labels).sum().item()
-
-	print('Accuracy of the network on the 10000 test images: %d %%' % (
-	    100 * correct / total))
-
-	class_correct = list(0. for i in range(10))
-	class_total = list(0. for i in range(10))
-	with torch.no_grad():
-	    for data in testloader:
-	        images, labels = data
-	        outputs = net.model(images)
-	        _, predicted = torch.max(outputs, 1)
-	        c = (predicted == labels).squeeze()
-	        for i in range(4):
-	            label = labels[i]
-	            class_correct[label] += c[i].item()
-	            class_total[label] += 1
+# 	print('====================\nGEN {}'.format(generation))
+# 	# print_pop(pop)
+# 	print('    training')
+# 	train_nets(pop, e)
+# 	print('    testing')
+# 	res = test_nets(pop)
+# 	print('    evolving')
+# 	evolve_nets(pop, res, 2)
 
 
-	for i in range(10):
-	    print('Accuracy of %5s : %2d %%' % (
-	        classes[i], 100 * class_correct[i] / class_total[i]))
-# '''
+n = cmm.CustomModelMutable(rfn.randomize_network(bounded=True), 32, CUDA=False)
+# a = copy.deepcopy(n.model.conv_0.weight.data)
+train_net(n, 2)
+test_nets([n])
+n.apply_point_mutations(.1, 1/2)
+test_nets([n])
+# print(n.model.conv_0.weight-a)

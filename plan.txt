@@ -584,9 +584,69 @@ n0_1 = n0.clone_with_added_filter(0)
 =======================================================
 Thurs June 13 2019
 
-I figured out the bug! because i wasn't deep copying the build info, the info on net0 was being changed when i cloned it. so i added the deep copy and it's all good now
+I figured out the bug! because i wasn't deep copying the build info, the info on net0 was being changed when i cloned it. so i added the deep copy and it's all good now.
+
+next step now is to do the same thing but with fc layers. maybe first tho we'll test the mutation of the conv layers pls. okay. let's do testing bro
+
+next step yah also is to re-implement point mutation bro
+
+point mutation
+fc mutation
+
+doing a test now, pop of 10, 3 gens
+
 =======================================================
+Friday June 14, 2019 
+
+ok just did a little test, it all works. adding conv filters done
+
+todo:
+
+- add conv filters DONE
+- point mutation
+- add conv layers
+- add fc nodes
+- add fc layers
+
+
+                                                                      art
 =======================================================
+Wednesday June 26 2019
+
+adding point mutation
+added point mutation
+testing now...
+
+tested:
+
+n = cmm.CustomModelMutable(rfn.randomize_network(bounded=True), 32, CUDA=False)
+# a = copy.deepcopy(n.model.conv_0.weight.data)
+train_net(n, 2)
+test_nets([n])
+n.apply_point_mutations(.01, 1/2)
+test_nets([n])
+....->
+
+    training a net
+/usr/local/Cellar/python3/3.6.3/Frameworks/Python.framework/Versions/3.6/lib/python3.6/site-packages/torch/nn/modules/container.py:92: UserWarning: Implicit dimension choice for log_softmax has been deprecated. Change the call to include dim=X as an argument.
+  input = module(input)
+[1,   500] loss: 2.135
+[1,  1000] loss: 2.026
+[2,   500] loss: 1.951
+[2,  1000] loss: 1.909
+Accuracy of the network on the 10000 test images: 35 %
+mutated conv_0
+mutated fc_0
+mutated classification_layer
+Accuracy of the network on the 10000 test images: 34 % ******* means that the mutation affected the behavior of the net!
+
+trying again with bound of .1 instead of .01, expecting greater difference in accuracy...
+
+awesome! got 17% down to 11% :)
+funny that a successful test of this thing leads to a decrease in accuracy
+
+
+
 =======================================================
 =======================================================
 =======================================================

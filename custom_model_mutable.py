@@ -131,6 +131,44 @@ class CustomModelMutable():
             self.model.cuda()
             self.cuda = True
 
+    def print_conv_layers(self):
+        conv_list = [(n, m) for (n, m) in self.model.named_modules() if m.__class__ == torch.nn.modules.conv.Conv2d]
+        
+        for n, m in conv_list:
+            print(m)
+
+    def clone_add_filter_rand(self):
+        n_conv_layers = self.build_info['n_conv_layers']['val']
+        c = random.choice(list(range(n_conv_layers)))
+        return self.clone_with_added_filter(c)
+
+    def apply_point_mutations(self, bound, rate):
+        '''
+        applies point muataions in place across all layers with weights at a rate of <rate>
+        and with a range of [-<bound>, <bound>]
+        '''
+        layer_list = [(n, m) for (n, m) in self.model.named_modules() if m.__class__ in (torch.nn.modules.conv.Conv2d, torch.nn.modules.linear.Linear)]        
+        for i,t in enumerate(layer_list):
+            name, layer = t
+            shape = layer.weight.data.size()
+            mutation = self.generate_mutations(shape, bound, rate)
+            layer.weight.data.add_(mutation)
+            print('mutated {}'.format(name))
+
+    def generate_mutations(self, layer_shape, bound, rate):
+        '''
+        rate: the chance of a mutation occuring
+        bound: mutations in [-bound, bound]
+        layer_shape: is for example net.conv1.weight.data.size()
+        returns tensor same size as layer with zeroes and a few mutations.
+        to apply mutation: add returned tensor to net.layer.weight.data like layer.weight.data.add_(returned tensor)
+        '''
+        # bound = float(bound)
+        mutations = torch.empty(layer_shape).uniform_(-bound, bound)
+        mask = torch.randint(0, int(1/rate), layer_shape)
+        masked_mutations = torch.where(mask==0, mutations, torch.zeros(layer_shape))
+        return masked_mutations 
+
     def clone_with_added_filter(self, n):
         '''
             return clone net with added filter at conv layer n
