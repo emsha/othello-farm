@@ -138,9 +138,16 @@ class CustomModelMutable():
             print(m)
 
     def clone_add_filter_rand(self):
+        # returns clone of self with an added conv filter to a randomly chosen conv2d layer
         n_conv_layers = self.build_info['n_conv_layers']['val']
         c = random.choice(list(range(n_conv_layers)))
         return self.clone_with_added_filter(c)
+
+    def clone_add_fc_node_rand(self):
+        # returns clone of self with an added fc node to a randomly chosen Linear layer (not classification layer tho)
+        n_fc = self.build_info['n_fc_layers']['val']
+        c = random.choice(list(range(n_fc)))
+        return self.clone_with_added_fc_node(c)
 
     def apply_point_mutations(self, bound, rate):
         '''
@@ -153,7 +160,7 @@ class CustomModelMutable():
             shape = layer.weight.data.size()
             mutation = self.generate_mutations(shape, bound, rate)
             layer.weight.data.add_(mutation)
-            print('mutated {}'.format(name))
+            # print('mutated {}'.format(name))
 
     def generate_mutations(self, layer_shape, bound, rate):
         '''
@@ -282,6 +289,65 @@ class CustomModelMutable():
         # print(new_net.model.fc_0.weight.data.size())
         return new_net
 
+    def clone_with_added_fc_node(self, n):
+        # returns new net clone with added note at n'th fc layer
+        l_cur_old = None
+        l_cur = None
+        l_next = None
+        l_next_old = None
+        l_cur_i = None
+
+        fc_list_old = [(n, m) for (n, m) in self.model.named_modules() if m.__class__ == torch.nn.modules.linear.Linear] 
+        # print(n)
+        if not 0 <= n < len(fc_list_old)-1:
+            raise Exception('net.clone_with_added_fc_node(n) : n is not between 0 and num fc layers')
+        # update build info for new net
+        # init new net
+
+        n_nodes=1
+        new_build_info = copy.deepcopy(self.build_info)
+        new_build_info['fc_layers'][n]['n_units']['val'] += n_nodes
+        new_net = CustomModelMutable(new_build_info, self.image_size)
+
+        # get layers to change
+        fc_list = [(n, m) for (n, m) in new_net.model.named_modules() if m.__class__ == torch.nn.modules.linear.Linear]
+        
+        '''
+        old_sizes = []
+        new_sizes = []
+        
+        
+        #print sizes (debugging)
+        for l in self.model:
+            try:
+                old_sizes.append(l.weight.data.size())
+            except:
+                AttributeError()
+        for l in new_net.model:
+            try:
+                new_sizes.append(l.weight.data.size())
+            except:
+                AttributeError()
+        # print(old_sizes)
+        # print(new_sizes)
+        '''
+
+        l_cur_old = fc_list_old[n][1]
+        l_cur = fc_list[n][1]
+        l_next_old = fc_list_old[n+1][1]
+        l_next = fc_list[n+1][1]
+
+        cur_ins = l_cur.weight.data.size()[1]
+        next_outs = l_next.weight.data.size()[0]
+        # add an out to old cur
+        l_cur.weight.data = torch.cat((l_cur_old.weight.data, torch.ones(cur_ins).unsqueeze(0)), 0)
+        # add an in to old_next
+        l_next.weight.data = torch.cat((l_next_old.weight.data, torch.ones(next_outs).unsqueeze(1)), 1)
+
+        return new_net
+
+
+        
     def clone(self, add_conv_layer=False):
         ''' 
             TODO: UPDATE DATA

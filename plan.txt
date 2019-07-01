@@ -644,10 +644,77 @@ trying again with bound of .1 instead of .01, expecting greater difference in ac
 
 awesome! got 17% down to 11% :)
 funny that a successful test of this thing leads to a decrease in accuracy
-
-
-
 =======================================================
+Sunday June 30 2019
+
+todo:
+
+- add conv filters DONE
+- point mutation DONE
+- add conv layers
+- add fc nodes DOING
+- add fc layers
+
+can't add nodes to the last linear layer because it's the classification layer brooooo dummieeeeeeee
+adding a node to an fc layer modifies the shape of that layer's matrix and the matrix of the layer that follows
+i.e. editing fc_0 changes 0 and 1, 1 changes 1 and 2 etc. oknice
+
+
+i think i've got it, gotta test
+
+so anyway here was my scratchwork for adding fc nodes:
+
+'''
+print('------------')
+
+print(nn.Linear(2, 3).weight.data.size())
+print(nn.Linear())
+
+print('------------')
+
+ins = 1
+outs = 2
+l0 = nn.Linear(ins, outs)
+# ins = layer.weight.data.size()[1]
+# outs = layer.weight.data.size()[0]
+
+print(l0.weight.size())
+# add node to this layer (add an out (init to 1's))
+node=torch.ones(ins)
+print(torch.cat((l0.weight.data, node.unsqueeze(0)), 0))
+
+#node was added to prev layer, so edit this layer by adding ins to this one (init to 1s)
+ins1 = 2
+outs1 = 4
+l1 = nn.Linear(ins1, outs1)
+print(torch.cat((l1.weight.data, torch.ones(outs1).unsqueeze(1)), 1))
+
+#yay!
+'''
+# l.weight.data
+
+it's testing yay!
+
+todo:
+
+- add conv filters DONE
+- point mutation DONE
+- add conv layers 
+- add fc nodes DONE
+- add fc layers
+
+let's add some layerz boi
+conv layers:
+i'm thinking to add them BEFORE the index that you specify so like add_conv_layer(0) would prepend a new layer, and (1) would add a layer after the first layer. for simplicity's sake, let's not add a conv layer after the last conv layer, only before, just cuz then the fc layers dont have to be modified
+
+fc layers: same thing, let's only add after the first fc layer and before the classification layer
+QUESTION: would there be a need to add a totally new last fc layer? and similar q re conv layers? and also re first layers? idk!
+
+so just thinking about conv layers:
+	we add a conv layer. 
+
+
+
 =======================================================
 =======================================================
 =======================================================

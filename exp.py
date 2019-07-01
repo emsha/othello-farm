@@ -96,6 +96,16 @@ def test_nets(nets):
 		#         classes[i], 100 * class_correct[i] / class_total[i]))
 	return res
 
+def evolve_net(net, add_filter=True, add_fc_node=True, point=True):
+	# returns new net with mutations on random layers
+	if point:
+		net.apply_point_mutations(.001, 1/5)
+	if add_filter:
+		net = net.clone_add_filter_rand()
+	if add_fc_node:
+		net = net.clone_add_fc_node_rand()
+	return net
+
 def evolve_nets(nets, res, top_n):
 	# get top n
 	top_n_i = sorted(range(len(res)), key = lambda i: res[i], reverse=True)[:top_n]
@@ -140,10 +150,56 @@ def print_pop(p):
 # 	evolve_nets(pop, res, 2)
 
 
-n = cmm.CustomModelMutable(rfn.randomize_network(bounded=True), 32, CUDA=False)
+n = cmm.CustomModelMutable(rfn.randomize_network(bounded=False), 32, CUDA=False)
+# print(n.model)
+# n1 = n.clone_with_added_fc_node(0)
+# print(n.model)
+# print(n1.model)
+
+'''
+print('------------')
+
+print(nn.Linear(2, 3).weight.data.size())
+print(nn.Linear())
+
+print('------------')
+
+ins = 1
+outs = 2
+l0 = nn.Linear(ins, outs)
+# ins = layer.weight.data.size()[1]
+# outs = layer.weight.data.size()[0]
+
+print(l0.weight.size())
+# add node to this layer (add an out (init to 1's))
+node=torch.ones(ins)
+print(torch.cat((l0.weight.data, node.unsqueeze(0)), 0))
+
+#node was added to prev layer, so edit this layer by adding ins to this one (init to 1s)
+ins1 = 2
+outs1 = 4
+l1 = nn.Linear(ins1, outs1)
+print(torch.cat((l1.weight.data, torch.ones(outs1).unsqueeze(1)), 1))
+
+#yay!
+'''
+# l.weight.data
+
+
+
+
+#(in, out)
 # a = copy.deepcopy(n.model.conv_0.weight.data)
-train_net(n, 2)
-test_nets([n])
-n.apply_point_mutations(.1, 1/2)
-test_nets([n])
+
+for i in range(10):
+	print(n.model)
+	print('---------training net----------')
+	train_net(n, 1)
+	# print('---------testing net----------')
+	# test_nets([n])
+	print('---------evolving net----------')
+	n = evolve_net(n)
+	print('---------testing net (post evolve)----------')
+	test_nets([n])
+
 # print(n.model.conv_0.weight-a)

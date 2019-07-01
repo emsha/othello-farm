@@ -18,7 +18,7 @@ FC_SPACE['activation'] =\
 
 NET_SPACE = dict()
 NET_SPACE['n_conv_layers'] = (2, 7, 'int', 0.15)
-NET_SPACE['n_fc_layers'] = (1, 3, 'int', 0.15)
+NET_SPACE['n_fc_layers'] = (3, 3, 'int', 0.15)
 NET_SPACE['lr'] = (0.0001, 0.1, 'float', 0.15)
 NET_SPACE['weight_decay'] = (0.00001, 0.0004, 'float', 0.2)
 NET_SPACE['optimizer'] =\
